@@ -1,92 +1,90 @@
 "use client";
 import { useState } from "react";
 import axios from "axios";
+import styles from "./page.module.css";
 
-export default function PostPage() {
-    const [loading, setLoading] = useState(false);
-    const [addComment, setAddComment] = useState([]);
-    const [form, setForm] = useState({
-        name: "",
-        email: "",
-        body: ""
-    });
-    const [error, setError] = useState(false);
+export default function Edit(){
+  const [ commentID, setCommentID ] = useState("");
+  const [ form, setForm ] = useState({});
+  const [ loading, setLoading ] = useState(false);
+  const [ error, setError ] = useState(false);
+  const [ success, setSuccess ] = useState(false);
 
-    const criarNovoComment = async () => {
-        setLoading(true);
+  const buscarComentario = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get(`https://jsonplaceholder.typicode.com/comments/${commentID}`);
+      setForm({name: data.name, email: data.email, body: data.body});
+    } catch (error) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const response = await axios.post("https://jsonplaceholder.typicode.com/comments", {
-                name: form.name.trim(),
-                email: form.email.trim(),
-                body: form.body.trim()
-            });
-            setAddComment([response.data, ...addComment]);
-            setForm({name: "", email: "", body: ""});
-           
-        } catch (error) {
-                setError(true);
-            console.error("❌ Erro ao criar comentários:", error);
-           
-        } finally {
-            setLoading(false);
-        }
+  const editarComentario = async () => {
+    setLoading(true);
+    try {
+        await axios.put(`https://jsonplaceholder.typicode.com/comments/${commentID}`, form);
+        setSuccess(true);
+    } catch (error) {
+        setError(true);
+    } finally {
+        setLoading(false);
+    }
+  };
 
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.title}>Editar Comentário</h1>
 
-    };
+    <div className={styles.inputGroup}>
+      <input
+      type="number"
+      value={commentID}
+      onChange={(e) => setCommentID(e.target.value)}
+      placeholder="ID do comentário"
+      />
+      <button onClick={buscarComentario} disabled={loading}>
+        {loading ? "Carregando..." : "Buscar Comentário"}
+      </button>
+    </div>
 
-    const atualizarForm = (e) => {
-        const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
-    };
+    {form.name && (
+      <div className={styles.form}>
+        <h2 className={styles.subtitle}>Editar Detalhes do Comentário</h2>
+        <input
+          type="text"
+          value={form.name}
+          onChange={(e) => setForm({...form, name: e.target.value})}
+          placeholder="Digita o seu nome aqui fih"
+          className={styles.input}
+          />
+        <br />
+      <input
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm({...form, email: e.target.value})}
+          placeholder="Coloca o seu email aqui, zé!"
+          className={styles.input}
+          />
+      <br />
+      <textarea
+          value={form.body}
+          onChange={(e) => setForm({...form, body: e.target.value})}
+          placeholder="Escreve o seu comentário aqui, moço!"
+          rows="3"
+          />
+      <br />
+      <button onClick={editarComentario} disabled={loading || !form.name?.trim()} className={styles.button}>
+        {loading ? "Carregando..." : "Salvar Alterações"}
+      </button>
+      </div>
+     )}    
 
-    return (
-        <div>
-            <h1>Criar Novo Comentário</h1>
-            <div>
-                <input
-                    type="text"
-                    name="name"
-                    placeholder="Nome"
-                    value={form.name}
-                    onChange={atualizarForm}
-                    required
-                />
-                <br />
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={form.email}
-                    onChange={atualizarForm}
-                    required
-                />
-                <br />
-                <textarea
-                    name="body"
-                    placeholder="Comentário"
-                    value={form.body}
-                    onChange={atualizarForm}
-                    raws="4"
-                />
-                <br />
-                <button onClick={criarNovoComment} disabled={!form.name.trim() || loading}>
-                    {loading ? "Carregando..." : "Criar Comentário"}
-                </button>
-            </div>
-            {error && <p>❌ Erro ao criar comentário</p>}
+    {error && <p className={styles.error} style={{color: "red"}}>Deu um probleminha aqui. Tenta de novo aí, rapaz.</p>}
+    {success && <p  className={styles.success} style={{color: "green"}}>Comentário atualizado com sucesso, sô!</p>}
+  </div>
 
-            <h2>Comentários Adicionados</h2>
-            <ul>
-                {addComment.map((comment) => (
-                    <li key={comment.id}>
-                        <hr />
-                        <p> {comment.name}</p>
-                        <p> ({comment.email})</p>
-                        <p> {comment.body}</p>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
+  )
 }
